@@ -2,164 +2,195 @@
 
 class INSTAGRAM
 {
-	protected $client_id;
+    protected $client_id;
+    protected $client_secret;
+    protected $access_token;
+    protected $redirect_uri;
+    protected $user_id;
+    protected $long_term_access_token;
+    protected $media;
 
-	protected $client_secret;
+    public function __construct($client_id, $client_secret, $redirect_uri)
+    {
+        $this->client_id = $client_id;
+        $this->client_secret = $client_secret;
+        $this->redirect_uri = $redirect_uri;
+    }
 
-	protected $access_token;
+    public function getOAuthCode()
+    {
+        if (isset($_GET['code']) && $_GET['code']) {
+            return trim($_GET['code']);
+        }
+    }
 
-	protected $redirect_uri;
+    public function getAccessToken()
+    {
+        $url = 'https://api.instagram.com/oauth/access_token';
 
-	protected $user_id;
+        $code = $this->getOAuthCode();
 
-	protected $long_term_access_token;
+        $data = [
+            'client_id' => $this->client_id,
+            'client_secret' => $this->client_secret,
+            'grant_type' => 'authorization_code',
+            'redirect_uri' => $this->redirect_uri,
+            'code' => $code
+        ];
 
-	public function __construct($client_id, $client_secret, $redirect_uri)
-	{
-		$this->client_id = $client_id;
-		$this->client_secret = $client_secret;
-		$this->redirect_uri = $redirect_uri;
-	}
+        $result = $this->sendPostRequest($url, $data, true);
 
-	public function getOAuthCode()
-	{
-		if (isset($_GET['code']) && $_GET['code']) {
-			return trim($_GET['code']);
-		}
-	}
+        $result = json_decode($result, true);
 
-	public function getAccessToken()
-	{
-		$url = 'https://api.instagram.com/oauth/access_token';
+        if (isset($result['access_token']) && $result['access_token']) {
+            $this->access_token = trim($result['access_token']);
+        }
 
-		$code = $this->getOAuthCode();
+        if (isset($result['user_id']) && $result['user_id']) {
+            $this->user_id = trim($result['user_id']);
+        }
+    }
 
-		$data = [
-			'client_id' => $this->client_id,
-			'client_secret' => $this->client_secret,
-			'grant_type' => 'authorization_code',
-			'redirect_uri' => $this->redirect_uri,
-			'code' => $code
-		];
+    public function getLongTermAccessToken()
+    {
+        $url = 'https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=' . $this->client_secret . '&access_token=' . $this->access_token;
 
-		$result = $this->sendPostRequest($url, $data, true);
+        $result = $this->sendGetRequest($url);
 
-		$result = json_decode($result, true);
+        $result = json_decode($result, true);
 
-		if (isset($result['access_token']) && $result['access_token']) {
-			$this->access_token = trim($result['access_token']);
-		}
+        if (isset($result['access_token']) && $result['access_token']) {
+            $this->long_term_access_token = trim($result['access_token']);
+        }
 
-		if (isset($result['user_id']) && $result['user_id']) {
-			$this->user_id = trim($result['user_id']);
-		}
-	}
+        return $this->long_term_access_token;
+    }
 
-	public function getLongTermAccessToken()
-	{
-		$url = 'https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=' . $this->client_secret . '&access_token=' . $this->access_token;
+    public function setUserId($user_id)
+    {
+        $this->user_id = $user_id;
+    }
 
-		$result = $this->sendGetRequest($url);
+    public function setLongTermAccessToken($token)
+    {
+        $this->long_term_access_token = $token;
+    }
 
-		$result = json_decode($result, true);
+    public function refreshAccessToken()
+    {
+        $url = 'http://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=' . $this->long_term_access_token;
 
-		if (isset($result['access_token']) && $result['access_token']) {
-			$this->long_term_access_token = trim($result['access_token']);
-		}
+        $result = $this->sendGetRequest($url);
 
-		return $this->long_term_access_token;
-	}
+        $result = json_decode($result, true);
 
-	public function setUserId($user_id)
-	{
-		$this->user_id = $user_id;
-	}
+        if (isset($result['access_token']) && $result['access_token']) {
+            $this->long_term_access_token = trim($result['access_token']);
+        }
+    }
 
-	public function setLongTermAccessToken($token)
-	{
-		$this->long_term_access_token = $token;
-	}
+    public function saveAccessToken()
+    {
+        if (!is_dir(DATA_PATH) || !is_writable(DATA_PATH)) {
+            return false;
+        }
 
-	public function refreshAccessToken()
-	{
-		$url = 'http://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=' . $this->long_term_access_token;
+        $file = DATA_PATH . '/' . TOKEN_FILE;
 
-		$result = $this->sendGetRequest($url);
+        if (is_file($file)) {
+            unlink($file);
+        }
 
-		$result = json_decode($result, true);
+        $fp = fopen($file, 'w');
 
-		if (isset($result['access_token']) && $result['access_token']) {
-			$this->long_term_access_token = trim($result['access_token']);
-		}
-	}
+        fwrite($fp, "<?php\n");
+        fwrite($fp, "\$user_id = '" . $this->user_id . "';\n");
+        fwrite($fp, "\$access_token = '" . $this->long_term_access_token . "';\n");
 
-	public function saveAccessToken($dir)
-	{
-		if (!is_dir($dir) || !is_writable($dir)) {
-			return false;
-		}
+        fclose($fp);
+    }
 
-		$file = $dir . '/access_token.php';
+    public function getMedia()
+    {
+        $file = DATA_PATH . '/' . MEDIA_FILE;
 
-		if (is_file($file)) {
-			unlink($file);
-		}
+        if (!is_file($file)) {
+            $this->getMediaData();
+        } else {
+            require $file;
 
-		$fp = fopen($file, 'w');
+            $this->media = $media;
+        }
 
-		fwrite($fp, "<?php\n");
-		fwrite($fp, "\$user_id = '" . $this->user_id . "';\n");
-		fwrite($fp, "\$access_token = '" . $this->long_term_access_token . "';\n");
+        return $this->media;
+    }
 
-		fclose($fp);
-	}
+    protected function getMediaData()
+    {
+        $url = 'https://graph.instagram.com/' . $this->user_id . '/media?fields=id,media_type,media_url,permalink,thumbnail_url,username,caption&access_token=' . $this->long_term_access_token;
 
-	public function getMedia()
-	{
-		$url = 'https://graph.instagram.com/' . $this->user_id . '/media?fields=id,media_type,media_url,permalink,thumbnail_url,username,caption&access_token=' . $this->long_term_access_token;
+        $headers = [
+            'Accept: ' . $_SERVER['HTTP_ACCEPT'],
+            'Accept-Language: ' . $_SERVER['HTTP_ACCEPT_LANGUAGE'],
+            'Cache-Control: no-cache',
+            'User-Agent: ' . $_SERVER['HTTP_USER_AGENT']
+        ];
 
-		$headers = [
-			'Accept: ' . $_SERVER['HTTP_ACCEPT'],
-			'Accept-Language: ' . $_SERVER['HTTP_ACCEPT_LANGUAGE'],
-			'Cache-Control: no-cache',
-			'User-Agent: ' . $_SERVER['HTTP_USER_AGENT']
-		];
+        $this->media = $this->sendGetRequest($url, $headers);
 
-		return $this->sendGetRequest($url, $headers);
-	}
+        $this->saveMediaData();
+    }
 
-	protected function sendGetRequest($url, $headers)
-	{
-		return $this->sendRequest($url, [], false, $headers);
-	}
+    protected function saveMediaData()
+    {
+        if (!is_dir(DATA_PATH) || !is_writable(DATA_PATH)) {
+            return false;
+        }
 
-	protected function sendPostRequest($url, $data = [], $headers = [])
-	{
-		return $this->sendRequest($url, $data, true, $headers);
-	}
+        $file = DATA_PATH . '/' . MEDIA_FILE;
 
-	protected function sendRequest($url, $data = [], $post = false, $headers = [])
-	{
-		$ch = curl_init($url);
+        $mtime = filemtime($file);
 
-		curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        if ($mtime < time() - MEDIA_REFRESH_LIMIT * 60) {
+            $fp = fopen($file, 'w');
 
-		if (!empty($headers)) {
-			curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-		}
+            fwrite($fp, "<?php\n");
+            fwrite($fp, "\$media = base64_decode('" . base64_encode($this->media) . "');\n");
+        }
+    }
 
-		if ($post) {
-			curl_setopt($ch, CURLOPT_POST, true);
-			curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-		}
+    protected function sendGetRequest($url, $headers)
+    {
+        return $this->sendRequest($url, [], false, $headers);
+    }
 
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    protected function sendPostRequest($url, $data = [], $headers = [])
+    {
+        return $this->sendRequest($url, $data, true, $headers);
+    }
 
-		$result = curl_exec($ch);
+    protected function sendRequest($url, $data = [], $post = false, $headers = [])
+    {
+        $ch = curl_init($url);
 
-		curl_close($ch);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
 
-		return $result;
-	}
+        if (!empty($headers)) {
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        }
+
+        if ($post) {
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        }
+
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+
+        $result = curl_exec($ch);
+
+        curl_close($ch);
+
+        return $result;
+    }
 }

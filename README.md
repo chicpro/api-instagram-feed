@@ -4,19 +4,29 @@
 
 $client_id = '';
 $client_secret = '';
-$redirect_uri = '';
+$redirect_uri = 'https://example.com/oauth.php';
+
+define('TOKEN_REFRESH_LIMIT', 50); // 일
+define('MEDIA_REFRESH_LIMIT', 10); // 분
+
+define('DATA_PATH', __DIR__ . '/data');
+
+define('TOKEN_FILE', 'token.php');
+define('MEDIA_FILE', 'media.php');
 ```
 
-`access_token.php` 파일 생성을 위해 쓰기 권한이 있는지 체크
+`token.php` 파일 생성을 위해 쓰기 권한이 있는지 체크
 
 ##### 파일구조
 ```
 .
 ├── INSTAGRAM.php
 ├── README.md
-├── access_token.php
 ├── common.php
 ├── config.php
+├── data
+│   ├── media.php
+│   └── token.php
 ├── media.php
 └── oauth.php
 ```
