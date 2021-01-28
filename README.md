@@ -15,7 +15,7 @@ define('TOKEN_FILE', 'token.php');
 define('MEDIA_FILE', 'media.php');
 ```
 
-`token.php` 파일 생성을 위해 쓰기 권한이 있는지 체크
+`TOKEN_FILE` 등의 파일 생성을 위해 `DATA_PATH` 디렉토리에 쓰기 권한이 있는지 체크
 
 ##### 파일구조
 ```
