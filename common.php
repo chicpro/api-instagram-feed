@@ -1,5 +1,4 @@
 <?php
-
 require __DIR__ . '/INSTAGRAM.php';
 require __DIR__ . '/config.php';
 

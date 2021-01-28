@@ -1,5 +1,4 @@
 <?php
-
 class INSTAGRAM
 {
     protected $client_id;

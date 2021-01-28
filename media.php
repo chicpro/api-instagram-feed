@@ -1,5 +1,4 @@
 <?php
-
 ini_set('opcache.enable', '0');
 
 require __DIR__ . '/common.php';
@@ -49,14 +48,14 @@ $list = $result->data;
 
     <ul class="my_instagram">
         <?php
-		foreach ($list as $row) {
-			?>
+        foreach ($list as $row) {
+            ?>
         <li>
             <a href="<?php echo $row->permalink; ?>" target="_blank"><img src="<?php echo $row->media_url; ?>"><?php echo $row->caption; ?></a>
         </li>
         <?php
-		}
-		?>
+        }
+        ?>
     <ul>
 
 </body>
