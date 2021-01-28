@@ -1,5 +1,4 @@
 <?php
-
 ini_set('opcache.enable', '0');
 
 require __DIR__ . '/common.php';

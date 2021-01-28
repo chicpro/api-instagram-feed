@@ -38,7 +38,7 @@ class INSTAGRAM
             'code' => $code
         ];
 
-        $result = $this->sendPostRequest($url, $data, true);
+        $result = $this->sendPostRequest($url, $data);
 
         $result = json_decode($result, true);
 
@@ -151,7 +151,9 @@ class INSTAGRAM
 
         $mtime = filemtime($file);
 
-        if ($mtime < time() - MEDIA_REFRESH_LIMIT * 60) {
+        if ($mtime < time() - MEDIA_REFRESH_LIMIT * 60 * 60) {
+            unlink($file);
+
             $fp = fopen($file, 'w');
 
             fwrite($fp, "<?php\n");
@@ -159,7 +161,7 @@ class INSTAGRAM
         }
     }
 
-    protected function sendGetRequest($url, $headers)
+    protected function sendGetRequest($url, $headers = [])
     {
         return $this->sendRequest($url, [], false, $headers);
     }
