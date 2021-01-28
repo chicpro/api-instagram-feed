@@ -5,15 +5,15 @@ ini_set('opcache.enable', '0');
 require __DIR__ . '/common.php';
 
 if (!$access_token) {
-	$insta->getAccessToken();
+    $insta->getAccessToken();
 
-	$access_token = $insta->getLongTermAccessToken();
+    $access_token = $insta->getLongTermAccessToken();
 
-	$insta->saveAccessToken(__DIR__);
+    $insta->saveAccessToken();
 }
 
 if (!$access_token) {
-	die('No Access Token');
+    die('No Access Token');
 }
 
 header('Location: ./media.php');
