@@ -3,11 +3,15 @@ ini_set('opcache.enable', '0');
 
 require __DIR__ . '/common.php';
 
-$result = $insta->getMedia();
+try {
+    $result = $insta->getMedia();
 
-$result = json_decode($result);
+    $result = json_decode($result);
 
-$list = $result->data;
+    $list = $result->data;
+} catch (Exception $e) {
+    die($e->getMessage());
+}
 ?>
 
 <!DOCTYPE html>

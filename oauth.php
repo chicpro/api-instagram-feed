@@ -4,11 +4,15 @@ ini_set('opcache.enable', '0');
 require __DIR__ . '/common.php';
 
 if (!$access_token) {
-    $insta->getAccessToken();
+    try {
+        $insta->getAccessToken();
 
-    $access_token = $insta->getLongTermAccessToken();
+        $access_token = $insta->getLongTermAccessToken();
 
-    $insta->saveAccessToken();
+        $insta->saveAccessToken();
+    } catch (Exception $e) {
+        die($e->getMessage());
+    }
 }
 
 if (!$access_token) {

@@ -21,6 +21,8 @@ class INSTAGRAM
         if (isset($_GET['code']) && $_GET['code']) {
             return trim($_GET['code']);
         }
+
+        return false;
     }
 
     public function getAccessToken()
@@ -28,6 +30,10 @@ class INSTAGRAM
         $url = 'https://api.instagram.com/oauth/access_token';
 
         $code = $this->getOAuthCode();
+
+        if (!$code) {
+            throw new Exception('There is no code value.');
+        }
 
         $data = [
             'client_id' => $this->client_id,
@@ -40,6 +46,14 @@ class INSTAGRAM
         $result = $this->sendPostRequest($url, $data);
 
         $result = json_decode($result, true);
+
+        if (!is_array($result)) {
+            throw new Exception('It is not an array type.');
+        }
+
+        if (isset($result['error_type']) && $result['error_type']) {
+            throw new Exception($result['error_message'], $result['code']);
+        }
 
         if (isset($result['access_token']) && $result['access_token']) {
             $this->access_token = trim($result['access_token']);
@@ -58,6 +72,14 @@ class INSTAGRAM
 
         $result = json_decode($result, true);
 
+        if (!is_array($result)) {
+            throw new Exception('It is not an array type.');
+        }
+
+        if (isset($result['error_type']) && $result['error_type']) {
+            throw new Exception($result['error_message'], $result['code']);
+        }
+
         if (isset($result['access_token']) && $result['access_token']) {
             $this->long_term_access_token = trim($result['access_token']);
         }
@@ -67,11 +89,19 @@ class INSTAGRAM
 
     public function setUserId($user_id)
     {
+        if (strlen($user_id) < 1) {
+            throw new Exception('There is no user_id value.');
+        }
+
         $this->user_id = $user_id;
     }
 
     public function setLongTermAccessToken($token)
     {
+        if (strlen($token) < 1) {
+            throw new Exception('There is no long term access_token value.');
+        }
+
         $this->long_term_access_token = $token;
     }
 
@@ -83,6 +113,14 @@ class INSTAGRAM
 
         $result = json_decode($result, true);
 
+        if (!is_array($result)) {
+            throw new Exception('It is not an array type.');
+        }
+
+        if (isset($result['error_type']) && $result['error_type']) {
+            throw new Exception($result['error_message'], $result['code']);
+        }
+
         if (isset($result['access_token']) && $result['access_token']) {
             $this->long_term_access_token = trim($result['access_token']);
         }
@@ -91,7 +129,7 @@ class INSTAGRAM
     public function saveAccessToken()
     {
         if (!is_dir(DATA_PATH) || !is_writable(DATA_PATH)) {
-            return false;
+            throw new Exception('No permission to write to the directory.');
         }
 
         $file = DATA_PATH . '/' . TOKEN_FILE;
@@ -121,6 +159,10 @@ class INSTAGRAM
             $this->media = $media;
         }
 
+        if (!$this->media) {
+            throw new Exception('There is no media data.');
+        }
+
         return $this->media;
     }
 
@@ -137,13 +179,19 @@ class INSTAGRAM
 
         $this->media = $this->sendGetRequest($url, $headers);
 
+        $result = json_decode($this->media, true);
+
+        if (isset($result['error']) && !empty($result['error'])) {
+            throw new Exception($result['error']['message'], $result['error']['code']);
+        }
+
         $this->saveMediaData();
     }
 
     protected function saveMediaData()
     {
         if (!is_dir(DATA_PATH) || !is_writable(DATA_PATH)) {
-            return false;
+            throw new Exception('No permission to write to the directory.');
         }
 
         $file = DATA_PATH . '/' . MEDIA_FILE;
@@ -191,6 +239,10 @@ class INSTAGRAM
         $result = curl_exec($ch);
 
         curl_close($ch);
+
+        if (curl_errno($ch)) {
+            throw new Exception(curl_error($ch), curl_errno($ch));
+        }
 
         return $result;
     }
