@@ -1,13 +1,12 @@
 #### config.php 생성
 ```
 <?php
-
 $client_id = '';
 $client_secret = '';
 $redirect_uri = 'https://example.com/oauth.php';
 
 define('TOKEN_REFRESH_LIMIT', 50); // 일
-define('MEDIA_REFRESH_LIMIT', 10); // 분
+define('MEDIA_REFRESH_LIMIT', 1); // 시간
 
 define('DATA_PATH', __DIR__ . '/data');
 
