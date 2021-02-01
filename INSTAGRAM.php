@@ -18,6 +18,10 @@ class INSTAGRAM
 
     public function getOAuthCode()
     {
+        if (isset($_GET['error']) && $_GET['error']) {
+            throw new Exception($_GET['error_description']);
+        }
+
         if (isset($_GET['code']) && $_GET['code']) {
             return trim($_GET['code']);
         }
